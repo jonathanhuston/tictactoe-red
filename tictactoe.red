@@ -15,30 +15,32 @@ empty: does [
             copy ["" "" ""]]
 ]
 
-winner?: does [
+; given tiles, has player won?
+winner?: function [tiles player] [
+    result: false
     foreach row tiles [
-        if all [(row/1 = player) (row/2 = player) (row/3 = player)] [winner: player]
+        if all [(row/1 = player) (row/2 = player) (row/3 = player)] [result: true]
     ]
     foreach col [1 2 3] [
-        if all [(tiles/1/:col = player) (tiles/2/:col = player) (tiles/3/:col = player)] [winner: player]
+        if all [(tiles/1/:col = player) (tiles/2/:col = player) (tiles/3/:col = player)] [result: true]
     ]
-    if all [(tiles/1/1 = player) (tiles/2/2 = player) (tiles/3/3 = player)] [winner: player]
-    if all [(tiles/1/3 = player) (tiles/2/2 = player) (tiles/3/1 = player)] [winner: player]
-    winner <> none
+    if all [(tiles/1/1 = player) (tiles/2/2 = player) (tiles/3/3 = player)] [result: true]
+    if all [(tiles/1/3 = player) (tiles/2/2 = player) (tiles/3/1 = player)] [result: true]
+    result
 ]
 
-end-game: does [
+end-game: func [winner] [
     again/enabled?: true
     either winner [
-        result/data: rejoin ["Player " winner " won!"]
+        dialogue/data: rejoin ["Player " winner " won!"]
     ] [
-        result/data: "It's a tie!"
+        dialogue/data: "It's a tie!"
     ]
 ]
 
 next-turn: does [
     either player = "X" [player: "O"] [player: "X"]
-    result/text: rejoin ["Player " player "'s turn"]
+    dialogue/text: rejoin ["Player " player "'s turn"]
 ]
 
 tile: func [face] [
@@ -48,7 +50,11 @@ tile: func [face] [
         row: ((face/offset/y) / y-offset) + 1
         tiles/:row/:col: face/text
         count: count + 1
-        either (count = 9) or winner? [end-game] [next-turn]
+        either winner? tiles player [
+            end-game player
+        ] [
+            either (count = 9) [end-game none] [next-turn]
+        ]
     ]
 ]
 
@@ -56,12 +62,11 @@ forever [
     tiles: empty
     player: "X"
     count: 0
-    winner: none
     tictactoe-gui: [ 
         title "Tic Tac Toe"
         backdrop silver
         pad 5x0
-        result: text 328x30 center font-color red bold font-size 16 "Player X's turn"
+        dialogue: text 328x30 center font-color red bold font-size 16 "Player X's turn"
         return
         style t: button 100x100 bold font-size 48 "" [tile face]
         t t t return
