@@ -4,6 +4,8 @@ Red [
     Needs:  'View
 ]
 
+#include %/usr/local/lib/red/window.red
+
 x-offset: 114
 y-offset: 115
 
@@ -28,15 +30,15 @@ winner?: does [
 end-game: does [
     again/enabled?: true
     either winner [
-        result/data: rejoin [winner " won! Play again?"]
+        result/data: rejoin ["Player " winner " won!"]
     ] [
-        result/data: "It's a tie! Play again?"
+        result/data: "It's a tie!"
     ]
 ]
 
 next-turn: does [
     either player = "X" [player: "O"] [player: "X"]
-    result/text: rejoin [player "'s turn."]
+    result/text: rejoin ["Player " player "'s turn"]
 ]
 
 tile: func [face] [
@@ -58,16 +60,16 @@ forever [
     tictactoe-gui: [ 
         title "Tic Tac Toe"
         backdrop silver
+        pad 5x0
+        result: text 328x30 center font-color red bold font-size 16 "Player X's turn"
+        return
         style t: button 100x100 bold font-size 48 "" [tile face]
         t t t return
         t t t return
         t t t return
-        pad 5x0
-        result: text 328x30 center font-color red bold font-size 16 "X's turn."
-        return
-        again: button disabled "Again" [if face/enabled? [unview]
+        again: button disabled "Again" [if face/enabled? [window.update face unview]
         ]
         button "Quit" [quit]
     ]
-    view tictactoe-gui
+    view/options tictactoe-gui [offset: window.offset]
 ]
