@@ -10,10 +10,6 @@ players: 1
 human-player: "X"
 delay: 0.5
 
-; offsets for displaying squares on board
-x-offset: 114
-y-offset: 115
-
 ; internal representation of empty board
 empty-board: [["" "" ""] 
               ["" "" ""] 
@@ -108,8 +104,8 @@ play-square: function [
 ] [
     if all [(square/text = "") (not again/enabled?)] [
         square/text: player
-        col: ((square/offset/x) / x-offset) + 1
-        row: ((square/offset/y) / y-offset) + 1
+        col: ((square/offset/x) / (square/size/x + 10)) + 1
+        row: ((square/offset/y) / (square/size/y + 10)) + 1
         board/:row/:col: player
         update-ttt (get-square-num row col) player
         count: count + 1
