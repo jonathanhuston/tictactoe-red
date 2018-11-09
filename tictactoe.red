@@ -25,16 +25,16 @@ winner?: function [
     board   "Current board"
     player  "Current player"
 ] [
-    result: none
+    winner: none
     foreach row board [
-        if all [(row/1 = player) (row/2 = player) (row/3 = player)] [result: player]
+        if all [(row/1 = player) (row/2 = player) (row/3 = player)] [winner: player]
     ]
     repeat col 3 [
-        if all [(board/1/:col = player) (board/2/:col = player) (board/3/:col = player)] [result: player]
+        if all [(board/1/:col = player) (board/2/:col = player) (board/3/:col = player)] [winner: player]
     ]
-    if all [(board/1/1 = player) (board/2/2 = player) (board/3/3 = player)] [result: player]
-    if all [(board/1/3 = player) (board/2/2 = player) (board/3/1 = player)] [result: player]
-    result
+    if all [(board/1/1 = player) (board/2/2 = player) (board/3/3 = player)] [winner: player]
+    if all [(board/1/3 = player) (board/2/2 = player) (board/3/1 = player)] [winner: player]
+    winner
 ]
 
 
@@ -73,9 +73,9 @@ find-empty-squares: function [
     "Given board, returns array of empty square numbers"
     board
 ] [
-    result: copy []
-    repeat row 3 [repeat col 3 [if board/:row/:col = "" [append result get-square-num row col]]]
-    result
+    empty-squares: copy []
+    repeat row 3 [repeat col 3 [if board/:row/:col = "" [append empty-squares get-square-num row col]]]
+    empty-squares
 ]
 
 
@@ -103,9 +103,8 @@ update-ttt: function [
 
 play-square: function [
     "Places player's mark on selected square and checks for winner"
-    square    "Selected square"
-    /extern count
-    /extern player
+    square  
+    /extern player count
 ] [
     if all [(square/text = "") (not again/enabled?)] [
         square/text: player
@@ -125,7 +124,7 @@ play-square: function [
 
 
 next-turn: function [
-    "Gives next turn to human or computer"
+    "Gives next turn to human [and then computer]"
     board
     square
 ] [
