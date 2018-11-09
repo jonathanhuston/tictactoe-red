@@ -139,12 +139,7 @@ next-turn: function [
 ]
 
 
-initialize: does [
-    random/seed now/time
-    board: copy/deep empty-board
-    player: human-player
-    count: 0
-
+init-ttt: does [
     ttt: copy [ 
         title "Tic Tac Toe"
         backdrop silver
@@ -164,7 +159,13 @@ initialize: does [
     append ttt reduce ['button "Quit" [quit]]
 ]
 
+
+random/seed now/time
 forever [
-    initialize
+    board: copy/deep empty-board
+    player: human-player
+    count: 0
+    ttt: copy []
+    init-ttt
     view/options ttt [offset: window.offset]
 ]
