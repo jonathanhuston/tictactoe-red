@@ -8,9 +8,9 @@ Red [
 
 players: 1
 human-player: "X"
-delay: 0.3
+delay: 0.5
 
-; offsets for displaying tiles on board
+; offsets for displaying squares on board
 x-offset: 114
 y-offset: 115
 
@@ -21,7 +21,7 @@ empty-board: [["" "" ""]
 
 
 winner?: function [
-    "Given board, returns winning player, else none"
+    "Given board, returns player if winner, else none"
     board   "Current board"
     player  "Current player"
 ] [
@@ -61,20 +61,20 @@ next-player: function [
 ]
 
 
-get-tile: function [
-    "Given row and column, returns tile number"
+get-square-num: function [
+    "Given row and column, returns square number"
     row col
 ] [
     (row - 1) * 3 + col
 ]
 
 
-find-empty-tiles: function [
-    "Given board, returns array of empty tile numbers"
+find-empty-squares: function [
+    "Given board, returns array of empty square numbers"
     board
 ] [
     result: copy []
-    repeat row 3 [repeat col 3 [if board/:row/:col = "" [append result get-tile row col]]]
+    repeat row 3 [repeat col 3 [if board/:row/:col = "" [append result get-square-num row col]]]
     result
 ]
 
@@ -83,25 +83,36 @@ computer-turn: function [
     "Given board, generates random computer move"
     board
 ] [
-    possible-moves: find-empty-tiles board
+    possible-moves: find-empty-squares board
     move: pick possible-moves random length? possible-moves
-    tile: get to-word rejoin ["tile" form move]
-    wait delay
-    play-tile tile
+    square: get to-word rejoin ["square" form move]
+    play-square square
 ]
 
 
-play-tile: function [
-    "Places player's mark on selected tile and checks for winner"
-    tile    "Selected tile"
+update-ttt: function [
+    "Updates GUI layout with player's mark"
+    square-num
+    player
+] [
+    square-set-word: to-set-word rejoin ["square" form square-num ":"]
+    replace ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 ""] 
+                reduce [square-set-word 'button 100x100 'bold 'font-size 48 player]
+]
+
+
+play-square: function [
+    "Places player's mark on selected square and checks for winner"
+    square    "Selected square"
     /extern count
     /extern player
 ] [
-    if all [(tile/text = "") (not again/enabled?)] [
-        tile/text: player
-        col: ((tile/offset/x) / x-offset) + 1
-        row: ((tile/offset/y) / y-offset) + 1
-        board/:row/:col: tile/text
+    if all [(square/text = "") (not again/enabled?)] [
+        square/text: player
+        col: ((square/offset/x) / x-offset) + 1
+        row: ((square/offset/y) / y-offset) + 1
+        board/:row/:col: player
+        update-ttt (get-square-num row col) player
         count: count + 1
         winner: winner? board player
         either any [(count = 9) winner] [
@@ -116,32 +127,44 @@ play-tile: function [
 next-turn: function [
     "Gives next turn to human or computer"
     board
-    tile
+    square
 ] [
-    play-tile tile
-    if all [(players <> 2) (player <> human-player) (not again/enabled?)] [computer-turn board]
+    play-square square
+    if all [(players <> 2) (player <> human-player) (not again/enabled?)] [
+        window.update square unview
+        view/options ttt [offset: window.offset]
+        wait delay
+        computer-turn board
+    ]
 ]
 
 
-random/seed now/time
-first-dialogue: rejoin ["Player " human-player "'s turn"]
-ttt: [ 
-    title "Tic Tac Toe"
-    backdrop silver
-    pad 5x0
-    dialogue: text 328x30 center font-color red bold font-size 16 first-dialogue
-    return
-    style tile: button 100x100 bold font-size 48 "" [next-turn board face]
-    tile1: tile tile2: tile tile3: tile return
-    tile4: tile tile5: tile tile6: tile return
-    tile7: tile tile8: tile tile9: tile return
-    again: button disabled "Again" [if face/enabled? [window.update face unview]]
-    button "Quit" [quit]
-]
-
-forever [
+initialize: does [
+    random/seed now/time
     board: copy/deep empty-board
     player: human-player
     count: 0
+
+    ttt: copy [ 
+        title "Tic Tac Toe"
+        backdrop silver
+        pad 5x0
+        do [dialogue-text: rejoin ["Player " player "'s turn"]]
+        dialogue: text 328x30 center font-color red bold font-size 16 dialogue-text
+        return
+    ]
+
+    repeat square-num 9 [
+        square-set-word: to-set-word rejoin ["square" form square-num ":"]
+        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" [next-turn board face]]
+        if square-num % 3 = 0 [append ttt 'return]
+    ]
+
+    append ttt reduce [to-set-word "again" 'button 'disabled "Again" [if face/enabled? [window.update face unview]]]
+    append ttt reduce ['button "Quit" [quit]]
+]
+
+forever [
+    initialize
     view/options ttt [offset: window.offset]
 ]
