@@ -8,6 +8,7 @@ Red [
 
 players: 1
 human-player: "X"
+delay: 0.3
 
 ; offsets for displaying tiles on board
 x-offset: 114
@@ -69,7 +70,7 @@ get-tile: function [
 
 
 find-empty-tiles: function [
-    "Given board, returns array of empty tiles"
+    "Given board, returns array of empty tile numbers"
     board
 ] [
     result: copy []
@@ -85,13 +86,13 @@ computer-turn: function [
     possible-moves: find-empty-tiles board
     move: pick possible-moves random length? possible-moves
     tile: get to-word rejoin ["tile" form move]
+    wait delay
     play-tile tile
 ]
 
 
 play-tile: function [
-    "Places player's mark on selected tile"
-    "Gives computer a turn if only one human playing"
+    "Places player's mark on selected tile and checks for winner"
     tile    "Selected tile"
     /extern count
     /extern player
@@ -106,10 +107,19 @@ play-tile: function [
         either any [(count = 9) winner] [
             end-game winner
         ] [
-            player: next-player player
-            if all [(players = 1) (player <> human-player)] [computer-turn board]
+            player: next-player player    
         ]
     ]
+]
+
+
+next-turn: function [
+    "Gives next turn to human or computer"
+    board
+    tile
+] [
+    play-tile tile
+    if all [(players <> 2) (player <> human-player) (not again/enabled?)] [computer-turn board]
 ]
 
 
@@ -121,12 +131,11 @@ ttt: [
     pad 5x0
     dialogue: text 328x30 center font-color red bold font-size 16 first-dialogue
     return
-    style tile: button 100x100 bold font-size 48 "" [play-tile face]
+    style tile: button 100x100 bold font-size 48 "" [next-turn board face]
     tile1: tile tile2: tile tile3: tile return
     tile4: tile tile5: tile tile6: tile return
     tile7: tile tile8: tile tile9: tile return
-    again: button disabled "Again" [if face/enabled? [window.update face unview]
-    ]
+    again: button disabled "Again" [if face/enabled? [window.update face unview]]
     button "Quit" [quit]
 ]
 
