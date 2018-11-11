@@ -39,10 +39,11 @@ end-game: function [
     winner  "Winning player, none if tie"
 ] [
     again/enabled?: true
+    dialogue/font/color: red
     either winner [
-        dialogue/data: rejoin ["Player " winner " won!"]
+        dialogue/text: rejoin ["Player " winner " won!"]
     ] [
-        dialogue/data: "It's a tie!"
+        dialogue/text: "It's a tie!"
     ]
 ]
 
@@ -86,17 +87,6 @@ computer-turn: function [
 ]
 
 
-update-ttt: function [
-    "Updates GUI layout with player's mark"
-    square-num
-    player
-] [
-    square-set-word: to-set-word rejoin ["square" form square-num ":"]
-    replace ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 ""] 
-                reduce [square-set-word 'button 100x100 'bold 'font-size 48 player]
-]
-
-
 play-square: function [
     "Places player's mark on selected square and checks for winner"
     square  
@@ -107,7 +97,6 @@ play-square: function [
         col: ((square/offset/x) / (square/size/x + 10)) + 1
         row: ((square/offset/y) / (square/size/y + 10)) + 1
         board/:row/:col: player
-        update-ttt (get-square-num row col) player
         count: count + 1
         winner: winner? board player
         either any [(count = 9) winner] [
@@ -126,8 +115,7 @@ next-turn: function [
 ] [
     play-square square
     if all [(players <> 2) (player <> human-player) (not again/enabled?)] [
-        window.update square unview
-        view/options ttt [offset: window.offset]
+        view ttt
         wait delay
         computer-turn board
     ]
@@ -140,7 +128,7 @@ init-ttt: does [
         backdrop silver
         pad 5x0
         do [dialogue-text: rejoin ["Player " player "'s turn"]]
-        dialogue: text 328x30 center font-color red bold font-size 16 dialogue-text
+        dialogue: text 328x30 center font-color black bold font-size 16 dialogue-text
         return
     ]
 
@@ -160,7 +148,6 @@ forever [
     board: copy/deep empty-board
     player: human-player
     count: 0
-    ttt: copy []
-    init-ttt
+    ttt: layout init-ttt
     view/options ttt [offset: window.offset]
 ]
