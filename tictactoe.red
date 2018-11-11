@@ -16,32 +16,49 @@ empty-board: [["" "" ""]
               ["" "" ""]]
 
 
+get-square-num: function [
+    "Given row and column, returns square number"
+    row col
+] [
+    (row - 1) * 3 + col
+]
+
+
 winner?: function [
-    "Given board, returns player if winner, else none"
+    "Given board, returns winning line if winner, else []"
     board   "Current board"
     player  "Current player"
 ] [
-    winner: none
-    foreach row board [
-        if all [(row/1 = player) (row/2 = player) (row/3 = player)] [winner: player]
+    winning-line: copy []
+    repeat row 3 [
+        if all [(board/:row/1 = player) (board/:row/2 = player) (board/:row/3 = player)] [
+            append winning-line reduce [get-square-num row 1 get-square-num row 2 get-square-num row 3]
+        ]
     ]
     repeat col 3 [
-        if all [(board/1/:col = player) (board/2/:col = player) (board/3/:col = player)] [winner: player]
+        if all [(board/1/:col = player) (board/2/:col = player) (board/3/:col = player)] [
+            append winning-line reduce [get-square-num 1 col get-square-num 2 col get-square-num 3 col]
+        ]
     ]
-    if all [(board/1/1 = player) (board/2/2 = player) (board/3/3 = player)] [winner: player]
-    if all [(board/1/3 = player) (board/2/2 = player) (board/3/1 = player)] [winner: player]
-    winner
+    if all [(board/1/1 = player) (board/2/2 = player) (board/3/3 = player)] [append winning-line [1 5 9]]
+    if all [(board/1/3 = player) (board/2/2 = player) (board/3/1 = player)] [append winning-line [3 5 7]]
+    winning-line
 ]
 
 
 end-game: function [
     "Displays end-of-game dialogue"
-    winner  "Winning player, none if tie"
+    winning-line "Winning line, [] if tie"
+    player       "Last player"
 ] [
     again/enabled?: true
     dialogue/font/color: red
-    either winner [
-        dialogue/text: rejoin ["Player " winner " won!"]
+    either (winning-line <> []) [
+        foreach square-num winning-line [
+            square: get to-word rejoin ["square" form square-num]
+            square/font/color: red
+        ]
+        dialogue/text: rejoin ["Player " player " won!"]
     ] [
         dialogue/text: "It's a tie!"
     ]
@@ -55,14 +72,6 @@ next-player: function [
     either player = "X" [player: "O"] [player: "X"]
     dialogue/text: rejoin ["Player " player "'s turn"]
     player
-]
-
-
-get-square-num: function [
-    "Given row and column, returns square number"
-    row col
-] [
-    (row - 1) * 3 + col
 ]
 
 
@@ -98,9 +107,9 @@ play-square: function [
         row: ((square/offset/y) / (square/size/y + 10)) + 1
         board/:row/:col: player
         count: count + 1
-        winner: winner? board player
-        either any [(count = 9) winner] [
-            end-game winner
+        winning-line: winner? board player
+        either any [(count = 9) (winning-line <> [])] [
+            end-game winning-line player
         ] [
             player: next-player player    
         ]
