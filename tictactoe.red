@@ -90,7 +90,7 @@ computer-turn: function [
 play-square: function [
     "Places player's mark on selected square and checks for winner"
     square  
-    /extern player count
+    /extern board player count
 ] [
     if all [(square/text = "") (not again/enabled?)] [
         square/text: player
