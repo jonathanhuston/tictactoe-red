@@ -51,7 +51,9 @@ end-game: function [
     winning-line "Winning line, [] if tie"
     player       "Last player"
 ] [
-    again/enabled?: true
+    zero/enabled?: true
+    one/enabled?: true
+    two/enabled?: true
     dialogue/font/color: red
     either (winning-line <> []) [
         foreach square-num winning-line [
@@ -101,7 +103,7 @@ play-square: function [
     square  
     /extern board player count
 ] [
-    if all [(square/text = "") (not again/enabled?)] [
+    if all [(square/text = "") (not zero/enabled?)] [
         square/text: player
         col: ((square/offset/x) / (square/size/x + 10)) + 1
         row: ((square/offset/y) / (square/size/y + 10)) + 1
@@ -111,7 +113,7 @@ play-square: function [
         either any [(count = 9) (winning-line <> [])] [
             end-game winning-line player
         ] [
-            player: next-player player    
+            player: next-player player
         ]
     ]
 ]
@@ -123,7 +125,7 @@ next-turn: function [
     square
 ] [
     play-square square
-    if all [(players <> 2) (player <> human-player) (not again/enabled?)] [
+    if all [(players <> 2) (player <> human-player) (not zero/enabled?)] [
         view ttt
         wait delay
         computer-turn board
@@ -147,7 +149,11 @@ init-ttt: does [
         if square-num % 3 = 0 [append ttt 'return]
     ]
 
-    append ttt reduce [to-set-word "again" 'button 'disabled "Again" [if face/enabled? [window.update face unview]]]
+    append ttt reduce [to-set-word "zero" 'button 'disabled "0 players" [if face/enabled? [window.update face unview]]
+                       to-set-word "one"  'button 'disabled "1 player"  [if face/enabled? [window.update face unview]]
+                       to-set-word "two"  'button 'disabled "2 players" [if face/enabled? [window.update face unview]]
+    
+    ]
     append ttt reduce ['button "Quit" [quit]]
 ]
 
