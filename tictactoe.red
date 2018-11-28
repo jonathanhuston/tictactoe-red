@@ -7,8 +7,7 @@ Red [
 #include %/usr/local/lib/red/window.red
 
 players: 1
-human-player: "X"
-delay: 0.0
+FIRST-PLAYER: "X"
 
 ; internal representation of empty board
 empty-board: [["" "" ""] 
@@ -176,9 +175,8 @@ next-turn: function [
 ] [
     if (players <> 0) [play-square square]
     if all [(players <> 2) (not zero/enabled?)] [
-        if any [(players = 0) (player <> human-player)] [
+        if any [(players = 0) (player <> FIRST-PLAYER)] [
             view ttt
-            wait delay
             computer-turn board
         ]
     ]
@@ -213,7 +211,7 @@ init-ttt: does [
 random/seed now/time
 forever [
     board: copy/deep empty-board
-    player: human-player
+    player: FIRST-PLAYER
     count: 0
     ttt: layout init-ttt
     view/options ttt [offset: window.offset]
