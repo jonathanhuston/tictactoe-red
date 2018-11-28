@@ -8,7 +8,7 @@ Red [
 
 players: 1
 human-player: "X"
-delay: 0.5
+delay: 0.0
 
 ; internal representation of empty board
 empty-board: [["" "" ""] 
@@ -21,6 +21,34 @@ get-square-num: function [
     row col
 ] [
     (row - 1) * 3 + col
+]
+
+
+update-board: function [
+    "Given board, player, and move, updates board"
+    board player move
+] [
+    col: (move - 1) % 3 + 1
+    row: (move - 1) / 3 + 1
+    board/:row/:col: player
+]
+
+
+opponent: function [
+    "Returns other player"
+    player
+] [
+    either player = "X" [return "O"] [return "X"]
+]
+
+
+next-player: function [
+    "Switches to next player, updating display"
+    player
+] [
+    player: opponent player
+    dialogue/text: rejoin ["Player " player "'s turn"]
+    player
 ]
 
 
@@ -67,16 +95,6 @@ end-game: function [
 ]
 
 
-next-player: function [
-    "Switches to next player"
-    player
-] [
-    either player = "X" [player: "O"] [player: "X"]
-    dialogue/text: rejoin ["Player " player "'s turn"]
-    player
-]
-
-
 find-empty-squares: function [
     "Given board, returns array of empty square numbers"
     board
@@ -87,12 +105,46 @@ find-empty-squares: function [
 ]
 
 
-computer-turn: function [
-    "Given board, generates random computer move"
-    board
+evaluate: function [
+    "Generates score for a given board"
+    board player count maximizing
+] [
+    either maximizing [win: 1] [win: -1]
+    if ((winner? board player) <> []) [return win]
+    if count = 9 [return 0]
+    (minimax board (opponent player) count (not maximizing)) % 10
+]
+
+
+minimax: function [
+    "Given board, finds best move using minimax"
+    board player count 
+    maximizing  "is this the maximizing player?"
 ] [
     possible-moves: find-empty-squares board
-    move: pick possible-moves random length? possible-moves
+    either maximizing [best-score: -10] [best-score: 10]
+    foreach move possible-moves [
+        test-board: copy/deep board
+        update-board test-board player move
+        score: evaluate test-board player (count + 1) maximizing
+        if any [all [maximizing (score > best-score)] all [(not maximizing) (score < best-score)]] [
+            best-move: move
+            best-score: score
+        ]
+    ]
+    either best-score = -1 [
+        (best-move * -10) + best-score
+    ] [
+        (best-move * 10) + best-score
+    ]
+]
+
+
+computer-turn: function [
+    "Given board, generates computer move"
+    board
+] [
+    move: (minimax board player count true) / 10
     square: get to-word rejoin ["square" form move]
     play-square square
 ]
@@ -105,9 +157,7 @@ play-square: function [
 ] [
     if all [(square/text = "") (not zero/enabled?)] [
         square/text: player
-        col: ((square/offset/x) / (square/size/x + 10)) + 1
-        row: ((square/offset/y) / (square/size/y + 10)) + 1
-        board/:row/:col: player
+        update-board board player square/extra
         count: count + 1
         winning-line: winner? board player
         either any [(count = 9) (winning-line <> [])] [
@@ -124,11 +174,13 @@ next-turn: function [
     board
     square
 ] [
-    play-square square
-    if all [(players <> 2) (player <> human-player) (not zero/enabled?)] [
-        view ttt
-        wait delay
-        computer-turn board
+    if (players <> 0) [play-square square]
+    if all [(players <> 2) (not zero/enabled?)] [
+        if any [(players = 0) (player <> human-player)] [
+            view ttt
+            wait delay
+            computer-turn board
+        ]
     ]
 ]
 
@@ -145,7 +197,7 @@ init-ttt: does [
 
     repeat square-num 9 [
         square-set-word: to-set-word rejoin ["square" form square-num ":"]
-        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" [next-turn board face]]
+        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [next-turn board face]]
         if square-num % 3 = 0 [append ttt 'return]
     ]
 
