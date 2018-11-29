@@ -178,7 +178,7 @@ init-ttt: does [
         if square-num % 3 = 0 [append ttt 'return]
     ]
 
-    append ttt reduce [to-set-word "computer-move" 'button "Computer Move" [computer-turn]]
+    append ttt reduce [to-set-word "computer-move" 'button "Computer Move" [if face/enabled? [computer-turn]]]
     append ttt reduce [to-set-word "again" 'button 'disabled "Again?" [if face/enabled? [window.update face unview]]
     
     ]
