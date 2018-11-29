@@ -111,7 +111,7 @@ evaluate: function [
     either maximizing [win: 1] [win: -1]
     if ((winner? board player) <> []) [return win]
     if count = 9 [return 0]
-    (minimax board (opponent player) count (not maximizing)) % 10
+    score: second minimax board (opponent player) count (not maximizing)
 ]
 
 
@@ -131,11 +131,7 @@ minimax: function [
             best-score: score
         ]
     ]
-    either best-score = -1 [
-        (best-move * -10) + best-score
-    ] [
-        (best-move * 10) + best-score
-    ]
+    reduce [best-move best-score]
 ]
 
 
@@ -143,7 +139,7 @@ computer-turn: function [
     "Given board, generates computer move"
     board
 ] [
-    move: (minimax board player count true) / 10
+    move: first minimax board player count true
     square: get to-word rejoin ["square" form move]
     play-square square
 ]
