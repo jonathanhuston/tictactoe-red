@@ -6,7 +6,6 @@ Red [
 
 #include %/usr/local/lib/red/window.red
 
-players: 1
 FIRST-PLAYER: "X"
 
 ; internal representation of empty board
@@ -78,9 +77,8 @@ end-game: function [
     winning-line "Winning line, [] if tie"
     player       "Last player"
 ] [
-    zero/enabled?: true
-    one/enabled?: true
-    two/enabled?: true
+    again/enabled?: true
+    computer-move/enabled?: false
     dialogue/font/color: red
     either (winning-line <> []) [
         foreach square-num winning-line [
@@ -136,8 +134,8 @@ minimax: function [
 
 
 computer-turn: function [
-    "Given board, generates computer move"
-    board
+    "Generates computer move"
+    /extern board player count
 ] [
     move: first minimax board player count true
     square: get to-word rejoin ["square" form move]
@@ -150,7 +148,7 @@ play-square: function [
     square  
     /extern board player count
 ] [
-    if all [(square/text = "") (not zero/enabled?)] [
+    if all [(square/text = "") (not again/enabled?)] [
         square/text: player
         update-board board player square/extra
         count: count + 1
@@ -159,21 +157,6 @@ play-square: function [
             end-game winning-line player
         ] [
             player: next-player player
-        ]
-    ]
-]
-
-
-next-turn: function [
-    "Gives next turn to human [and then computer]"
-    board
-    square
-] [
-    if (players <> 0) [play-square square]
-    if all [(players <> 2) (not zero/enabled?)] [
-        if any [(players = 0) (player <> FIRST-PLAYER)] [
-            view ttt
-            computer-turn board
         ]
     ]
 ]
@@ -191,13 +174,12 @@ init-ttt: does [
 
     repeat square-num 9 [
         square-set-word: to-set-word rejoin ["square" form square-num ":"]
-        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [next-turn board face]]
+        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [play-square face]]
         if square-num % 3 = 0 [append ttt 'return]
     ]
 
-    append ttt reduce [to-set-word "zero" 'button 'disabled "0 players" [if face/enabled? [window.update face unview]]
-                       to-set-word "one"  'button 'disabled "1 player"  [if face/enabled? [window.update face unview]]
-                       to-set-word "two"  'button 'disabled "2 players" [if face/enabled? [window.update face unview]]
+    append ttt reduce [to-set-word "computer-move" 'button "Computer Move" [computer-turn]]
+    append ttt reduce [to-set-word "again" 'button 'disabled "Again?" [if face/enabled? [window.update face unview]]
     
     ]
     append ttt reduce ['button "Quit" [quit]]
