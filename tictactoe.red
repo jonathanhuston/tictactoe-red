@@ -7,6 +7,7 @@ Red [
 #include %/usr/local/lib/red/window.red
 
 FIRST-PLAYER: "X"
+DELAY: 0.5
 
 ; internal representation of empty board
 empty-board: [["" "" ""] 
@@ -140,6 +141,11 @@ computer-turn: function [
     move: first minimax board player count true
     square: get to-word rejoin ["square" form move]
     play-square square
+    if all [computer-move/extra (count < 9)] [
+        view ttt
+        if count > 1 [wait DELAY]
+        computer-turn
+    ]
 ]
 
 
@@ -174,11 +180,17 @@ init-ttt: does [
 
     repeat square-num 9 [
         square-set-word: to-set-word rejoin ["square" form square-num ":"]
-        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [play-square face]]
+        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [
+            play-square face
+            computer-move/extra: false  
+        ]]
         if square-num % 3 = 0 [append ttt 'return]
     ]
 
-    append ttt reduce [to-set-word "computer-move" 'button "Computer Move" [if face/enabled? [computer-turn]]]
+    append ttt reduce [to-set-word "computer-move" 'button "Computer Move" 'extra false [if face/enabled? [
+        computer-turn
+        computer-move/extra: true
+    ]]]
     append ttt reduce [to-set-word "again" 'button 'disabled "Again?" [if face/enabled? [window.update face unview]]
     
     ]
