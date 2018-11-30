@@ -8,6 +8,8 @@ Red [
 
 FIRST-PLAYER: "X"
 DELAY: 0.5
+INF: 10
+NINF: -10
 
 ; internal representation of empty board
 empty-board: [["" "" ""] 
@@ -109,33 +111,45 @@ evaluate: function [
     board player count 
     maximizing  "is this the maximizing player?"
     depth       "current depth of analysis"
+    alpha beta  "alpha and beta values for pruning"
 ] [
     either maximizing [win: 1] [win: -1]
     if depth < 3 [win: win * 2]    ; choose sudden death over extended agony
     if winner? board player [return win]
     if count = 9 [return 0]
-    score: second minimax board (opponent player) count (not maximizing) depth
+    score: second _minimax board (opponent player) count (not maximizing) depth alpha beta
+]
+
+
+_minimax: function [
+    "Minimax helper function"
+    board player count 
+    maximizing  "is this the maximizing player?"
+    depth       "current depth of analysis"
+    alpha beta  "alpha and beta values for pruning"
+] [
+    possible-moves: find-empty-squares board
+    either maximizing [best-score: NINF] [best-score: INF]
+    foreach move possible-moves [
+        test-board: copy/deep board
+        update-board test-board player move
+        score: evaluate test-board player (count + 1) maximizing (depth + 1) alpha beta
+        if any [all [maximizing (score > best-score)] all [(not maximizing) (score < best-score)]] [
+            best-move: move
+            best-score: score
+        ]
+        either maximizing [alpha: max alpha best-score] [beta: min beta best-score]
+        if alpha >= beta [break]
+    ]
+    reduce [best-move best-score]
 ]
 
 
 minimax: function [
     "Given board, finds best move using minimax"
     board player count 
-    maximizing  "is this the maximizing player?"
-    depth       "current depth of analysis"
 ] [
-    possible-moves: find-empty-squares board
-    either maximizing [best-score: -10] [best-score: 10]
-    foreach move possible-moves [
-        test-board: copy/deep board
-        update-board test-board player move
-        score: evaluate test-board player (count + 1) maximizing (depth + 1)
-        if any [all [maximizing (score > best-score)] all [(not maximizing) (score < best-score)]] [
-            best-move: move
-            best-score: score
-        ]
-    ]
-    reduce [best-move best-score]
+    _minimax board player count true 0 NINF INF ; maximing depth alpha beta
 ]
 
 
@@ -165,12 +179,12 @@ computer-turn: function [
     computer-move/enabled?: false
     view ttt
     forever [
-        move: first minimax board player count true 0
+        move: first minimax board player count
         square: get to-word rejoin ["square" form move]
         play-square square
+        if count > 1 [wait DELAY]
         if any [(not computer-move/extra) again/enabled?] [break]
         view ttt
-        if count > 1 [wait DELAY]
     ]
     if (not again/enabled?) [computer-move/enabled?: true]
 ]
