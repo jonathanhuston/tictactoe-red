@@ -52,7 +52,7 @@ next-player: function [
 
 
 winner?: function [
-    "Given board, returns winning line if winner, else []"
+    "Given board, returns winning line if winner, else none"
     board   "Current board"
     player  "Current player"
 ] [
@@ -69,19 +69,20 @@ winner?: function [
     ]
     if all [(board/1/1 = player) (board/2/2 = player) (board/3/3 = player)] [append winning-line [1 5 9]]
     if all [(board/1/3 = player) (board/2/2 = player) (board/3/1 = player)] [append winning-line [3 5 7]]
+    if winning-line = [] [winning-line: none]
     winning-line
 ]
 
 
 end-game: function [
     "Displays end-of-game dialogue"
-    winning-line "Winning line, [] if tie"
+    winning-line "Winning line, none if tie"
     player       "Last player"
 ] [
     again/enabled?: true
     computer-move/enabled?: false
     dialogue/font/color: red
-    either (winning-line <> []) [
+    either winning-line [
         foreach square-num winning-line [
             square: get to-word rejoin ["square" form square-num]
             square/font/color: red
@@ -105,12 +106,15 @@ find-empty-squares: function [
 
 evaluate: function [
     "Generates score for a given board"
-    board player count maximizing
+    board player count 
+    maximizing  "is this the maximizing player?"
+    depth       "current depth of analysis"
 ] [
     either maximizing [win: 1] [win: -1]
-    if ((winner? board player) <> []) [return win]
+    if depth < 3 [win: win * 2]    ; choose sudden death over extended agony
+    if winner? board player [return win]
     if count = 9 [return 0]
-    score: second minimax board (opponent player) count (not maximizing)
+    score: second minimax board (opponent player) count (not maximizing) depth
 ]
 
 
@@ -118,34 +122,20 @@ minimax: function [
     "Given board, finds best move using minimax"
     board player count 
     maximizing  "is this the maximizing player?"
+    depth       "current depth of analysis"
 ] [
     possible-moves: find-empty-squares board
     either maximizing [best-score: -10] [best-score: 10]
     foreach move possible-moves [
         test-board: copy/deep board
         update-board test-board player move
-        score: evaluate test-board player (count + 1) maximizing
+        score: evaluate test-board player (count + 1) maximizing (depth + 1)
         if any [all [maximizing (score > best-score)] all [(not maximizing) (score < best-score)]] [
             best-move: move
             best-score: score
         ]
     ]
     reduce [best-move best-score]
-]
-
-
-computer-turn: function [
-    "Generates computer move"
-    /extern board player count
-] [
-    move: first minimax board player count true
-    square: get to-word rejoin ["square" form move]
-    play-square square
-    if all [computer-move/extra (count < 9)] [
-        view ttt
-        if count > 1 [wait DELAY]
-        computer-turn
-    ]
 ]
 
 
@@ -159,12 +149,30 @@ play-square: function [
         update-board board player square/extra
         count: count + 1
         winning-line: winner? board player
-        either any [(count = 9) (winning-line <> [])] [
+        either any [winning-line (count = 9)] [
             end-game winning-line player
         ] [
             player: next-player player
         ]
     ]
+]
+
+
+computer-turn: function [
+    "Generates computer move"
+    /extern board player count
+] [
+    computer-move/enabled?: false
+    view ttt
+    forever [
+        move: first minimax board player count true 0
+        square: get to-word rejoin ["square" form move]
+        play-square square
+        if any [(not computer-move/extra) again/enabled?] [break]
+        view ttt
+        if count > 1 [wait DELAY]
+    ]
+    if (not again/enabled?) [computer-move/enabled?: true]
 ]
 
 
