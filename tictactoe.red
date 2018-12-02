@@ -6,7 +6,7 @@ Red [
 
 #include %/usr/local/lib/red/window.red
 
-FIRST-PLAYER: "X"
+FIRST-PLAYER: "O"
 DELAY: 0.5
 INF: 10
 NINF: -10
