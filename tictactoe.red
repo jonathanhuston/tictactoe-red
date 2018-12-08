@@ -1,7 +1,8 @@
 Red [
     Title:  "Tic Tac Toe"
     Author: "Jonathan Huston"
-    Needs:  'View
+    Needs:  View
+    Deps:   Red 0.6.3
 ]
 
 #include %/usr/local/lib/red/window.red
