@@ -203,7 +203,7 @@ init-ttt: does [
 
     repeat square-num 9 [
         square-set-word: to-set-word rejoin ["square" form square-num ":"]
-        append ttt reduce [square-set-word 'button 100x100 'bold 'font-size 48 "" 'extra square-num [
+        append ttt reduce [square-set-word 'button 100x100 'font-size 48 "" 'extra square-num [
             play-square face
             computer-move/extra: false  
         ]]
